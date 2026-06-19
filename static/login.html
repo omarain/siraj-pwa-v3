@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Siraj — Workshop</title>
+<link rel="manifest" href="/static/manifest.json">
+<link rel="icon" href="/static/icons/icon-32.png">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#0c1420; --sidebar:#091018; --canvas:#0a121c; --card:#101c2a;
+  --card-raised:#13202f; --gold:#FFC53D; --gold-deep:#E8B04B;
+  --indigo:#7a8fd8; --teal:#6ab5ba; --cream:#FBF1DA; --cream-dim:#c9c2b0;
+  --gray-text:#9aa6b4; --slate:#5a6678; --border:#1e2b3a; --border-soft:#172534;
+  --shadow-md:0 4px 18px rgba(0,0,0,.42); --shadow-sm:0 2px 8px rgba(0,0,0,.32);
+  --radius-lg:0.55rem;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:#05080d; font-family:'Inter',sans-serif; color:var(--cream);
+  display:flex; align-items:center; justify-content:center; padding:22px;
+}
+.login-card{
+  background:var(--base); border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,197,61,.04);
+  padding:3rem 2.5rem; width:420px; max-width:100%;
+  display:flex; flex-direction:column; align-items:center; gap:1.5rem;
+}
+.glyph{color:var(--gold);font-size:36px;text-shadow:0 0 20px rgba(255,197,61,.5)}
+.brand{
+  font-family:'Cormorant',serif;font-weight:600;letter-spacing:.16em;
+  font-size:22px;color:var(--cream);
+}
+.brand .sub{
+  font-family:'Cormorant',serif;font-style:italic;font-weight:500;
+  font-size:14px;color:var(--gold-deep);letter-spacing:.02em;margin-left:8px;
+}
+.subtitle{font-size:12px;color:var(--gray-text);letter-spacing:.06em;margin-top:-.5rem}
+.lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-text);font-weight:600;align-self:flex-start;margin-bottom:-.8rem}
+input[type=email],input[type=password]{
+  width:100%;padding:11px 14px;font-size:13px;font-family:'Inter',sans-serif;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  color:var(--cream);outline:none;transition:border-color .2s;
+}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,197,61,.12)}
+.btn{
+  width:100%;padding:11px;font-size:13px;font-weight:700;letter-spacing:.03em;
+  color:#0c1420;background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+  border:none;border-radius:var(--radius-lg);cursor:pointer;
+  box-shadow:0 2px 14px rgba(255,197,61,.2);transition:transform .1s,box-shadow .2s;
+}
+.btn:hover{transform:scale(1.01);box-shadow:0 4px 20px rgba(255,197,61,.3)}
+.btn:active{transform:scale(.98)}
+.remember-row{display:flex;align-items:center;gap:.5rem;align-self:flex-start;margin-top:-.5rem}
+.remember-row label{font-size:11px;color:var(--gray-text);cursor:pointer}
+.remember-row input{accent-color:var(--gold)}
+.error{display:none;background:rgba(224,106,90,.12);border:1px solid rgba(224,106,90,.3);color:#e06a5a;font-size:11px;padding:.6rem .8rem;border-radius:.4rem;width:100%;text-align:center}
+.links{font-size:11px;color:var(--slate);display:flex;gap:.5rem}
+.links a{color:var(--indigo);text-decoration:none}
+.links a:hover{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <span class="glyph">&#9764;</span>
+  <div class="brand">SIRAJ<span class="sub">Workshop</span></div>
+  <div class="subtitle">AI Operator for your team</div>
+  <div class="error" id="error"></div>
+  <label class="lbl">Email</label>
+  <input type="email" id="email" placeholder="you@fixwave.ai" autocomplete="email" autofocus>
+  <label class="lbl">Password</label>
+  <input type="password" id="password" placeholder="········" autocomplete="current-password">
+  <div class="remember-row">
+    <input type="checkbox" id="rememberMe"><label for="rememberMe">Remember for 30 days</label>
+  </div>
+  <button class="btn" onclick="doLogin()">Sign In</button>
+  <button class="btn" style="background:transparent;color:var(--cream);border:1px solid var(--border);box-shadow:none" onclick="doSignup()">Create Account</button>
+  <div class="links">
+    <span>crafted by <a href="https://fixwave.ai" target="_blank">Fixwave</a></span>
+  </div>
+</div>
+<script>
+const api='/api';
+async function doLogin(){
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const remember=document.getElementById('rememberMe').checked;
+  if(!email||!password) return showError('Fill all fields');
+  try{
+    const r=await fetch(api+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,remember_me:remember})});
+    if(!r.ok){const d=await r.json();throw new Error(d.detail||'Invalid credentials')}
+    const d=await r.json();
+    localStorage.setItem('siraj_user',JSON.stringify(d.user));
+    window.location.href='/';
+  }catch(e){showError(e.message)}
+}
+async function doSignup(){
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  if(!email||!password) return showError('Fill all fields');
+  if(password.length<6) return showError('Password must be 6+ chars');
+  try{
+    const r=await fetch(api+'/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    if(!r.ok){const d=await r.json();throw new Error(d.detail||'Signup failed')}
+    const d=await r.json();
+    localStorage.setItem('siraj_user',JSON.stringify(d.user));
+    window.location.href='/';
+  }catch(e){showError(e.message)}
+}
+function showError(msg){const e=document.getElementById('error');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',5000)}
+document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+</body>
+</html>
