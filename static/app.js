@@ -40,7 +40,7 @@ function updateClock() {
 // ── Chat List ────────────────────────────────────────────────
 async function loadChats() {
   try {
-    const r = await fetch(API + '/ chats');
+    const r = await fetch(API + '/chats');
     if (!r.ok) return;
     const d = await r.json();
     chats = {};
@@ -359,4 +359,99 @@ function hashStr(s) {
   let h = 0;
   for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
   return h;
+}
+
+// ── Messaging Platform Connections ────────────────────────────
+
+async function openMessaging() {
+  document.getElementById('msgModal').style.display = 'flex';
+  await refreshMessagingStatus();
+}
+
+function closeMessaging() {
+  document.getElementById('msgModal').style.display = 'none';
+}
+
+async function refreshMessagingStatus() {
+  try {
+    const r = await fetch(API + '/messaging/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    for (const conn of d.connections || []) {
+      if (conn.platform === 'telegram') {
+        document.getElementById('tgConnectForm').style.display = 'none';
+        document.getElementById('tgVerifyForm').style.display = 'none';
+        document.getElementById('tgConnected').style.display = 'block';
+        document.getElementById('tgStatus').textContent = 'Connected as ' + conn.platform_user_id;
+        document.getElementById('tgStatus').style.color = 'var(--teal)';
+        document.getElementById('msgStatus').textContent = 'Telegram linked ✓';
+      }
+    }
+  } catch(e) {}
+}
+refreshMessagingStatus(); // check on load
+
+async function connectTelegram() {
+  const tgId = document.getElementById('tgIdInput').value.trim();
+  if (!tgId) return alert('Enter your Telegram ID');
+  
+  const btn = document.getElementById('tgConnectBtn');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  
+  try {
+    const r = await fetch(API + '/messaging/connect/telegram', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({telegram_id: tgId})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Failed');
+    
+    // Show OTP input
+    document.getElementById('tgConnectForm').style.display = 'none';
+    document.getElementById('tgVerifyForm').style.display = 'block';
+    document.getElementById('tgStatus').textContent = 'OTP sent — check Telegram';
+    document.getElementById('tgStatus').style.color = 'var(--gold)';
+  } catch(e) {
+    alert(e.message);
+    btn.textContent = 'Send OTP';
+    btn.disabled = false;
+  }
+}
+
+async function verifyTelegram() {
+  const tgId = document.getElementById('tgIdInput').value.trim();
+  const otp = document.getElementById('tgOtpInput').value.trim();
+  if (!otp || otp.length !== 6) return alert('Enter the 6-digit OTP');
+  
+  try {
+    const r = await fetch(API + '/messaging/verify/telegram', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({telegram_id: tgId, otp})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Invalid OTP');
+    
+    document.getElementById('tgVerifyForm').style.display = 'none';
+    document.getElementById('tgConnected').style.display = 'block';
+    document.getElementById('tgStatus').textContent = 'Connected as ' + tgId;
+    document.getElementById('tgStatus').style.color = 'var(--teal)';
+    document.getElementById('msgStatus').textContent = 'Telegram linked ✓';
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
+async function disconnectPlatform(platform) {
+  if (!confirm('Disconnect ' + platform + '?')) return;
+  try {
+    await fetch(API + '/messaging/disconnect/' + platform, {method: 'DELETE'});
+    document.getElementById('tgConnected').style.display = 'none';
+    document.getElementById('tgConnectForm').style.display = 'block';
+    document.getElementById('tgStatus').textContent = 'Not connected';
+    document.getElementById('tgStatus').style.color = 'var(--gray-text)';
+    document.getElementById('msgStatus').textContent = 'Link Telegram, Discord…';
+  } catch(e) { alert(e.message); }
 }

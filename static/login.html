@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Siraj — Workshop</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/icons/icon-32.png">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
@@ -96,7 +102,8 @@ async function doLogin(){
     if(!r.ok){const d=await r.json();throw new Error(d.detail||'Invalid credentials')}
     const d=await r.json();
     localStorage.setItem('siraj_user',JSON.stringify(d.user));
-    window.location.href='/';
+    if(d.token) localStorage.setItem('siraj_token',d.token);
+    setTimeout(()=>window.location.replace('/'),150);
   }catch(e){showError(e.message)}
 }
 async function doSignup(){
@@ -109,11 +116,17 @@ async function doSignup(){
     if(!r.ok){const d=await r.json();throw new Error(d.detail||'Signup failed')}
     const d=await r.json();
     localStorage.setItem('siraj_user',JSON.stringify(d.user));
-    window.location.href='/';
+    if(d.token) localStorage.setItem('siraj_token',d.token);
+    setTimeout(()=>window.location.replace('/'),150);
   }catch(e){showError(e.message)}
 }
 function showError(msg){const e=document.getElementById('error');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',5000)}
 document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>

@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Siraj — Workshop</title>
 <meta name="theme-color" content="#0c1420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/icons/icon-32.png">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
@@ -209,6 +215,16 @@ textarea,.msg-bubble,.bot-content{user-select:text;-webkit-user-select:text}
     <button class="new-btn" onclick="newChat()">+ New Chat</button>
     <div class="side-label">Workbench</div>
     <div class="sess-stack" id="chatList"></div>
+    <div class="side-label" style="margin-top:.7rem">Messaging</div>
+    <div class="sess-stack" id="msgStack" style="flex:0;max-height:120px">
+      <div class="sess-card" onclick="openMessaging()" style="align-items:center">
+        <span style="font-size:18px">⚡</span>
+        <div class="sess-body">
+          <div class="sess-name" style="font-size:12px">Connect Platforms</div>
+          <div class="sess-prev" id="msgStatus">Link Telegram, Discord…</div>
+        </div>
+      </div>
+    </div>
     <div class="side-foot">
       <div class="avatar" id="avatarLetter">S</div>
       <div>
@@ -254,6 +270,62 @@ textarea,.msg-bubble,.bot-content{user-select:text;-webkit-user-select:text}
   </div>
 </div>
 
-<script src="/static/app.js?v=1"></script>
+<!-- Messaging Panel Modal -->
+<div id="msgModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
+  <div style="background:var(--base);border:1px solid var(--border);border-radius:12px;padding:2rem;width:420px;max-width:90vw;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+      <span style="font-family:Cormorant,serif;font-size:18px;color:var(--cream)">⚡ Messaging</span>
+      <button onclick="closeMessaging()" style="background:none;border:1px solid var(--border);color:var(--gray-text);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div id="msgPanelContent">
+      <!-- Telegram Connect -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+          <span style="font-size:20px">💬</span>
+          <span style="font-weight:600;color:var(--cream)">Telegram</span>
+          <span id="tgStatus" style="font-size:10px;color:var(--gray-text);margin-left:auto">Not connected</span>
+        </div>
+        <div id="tgConnectForm">
+          <input id="tgIdInput" type="text" placeholder="Your Telegram ID (e.g. 6051514433)" style="width:100%;padding:8px;background:var(--canvas);border:1px solid var(--border);border-radius:6px;color:var(--cream);font-size:12px;margin-bottom:.5rem">
+          <button id="tgConnectBtn" onclick="connectTelegram()" style="width:100%;padding:8px;font-size:12px;font-weight:600;background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#0c1420;border:none;border-radius:6px;cursor:pointer">Send OTP</button>
+        </div>
+        <div id="tgVerifyForm" style="display:none">
+          <div style="font-size:11px;color:var(--teal);margin-bottom:.5rem">✅ OTP sent to Telegram. Enter the 6-digit code from Siraj:</div>
+          <input id="tgOtpInput" type="text" placeholder="000000" maxlength="6" style="width:100%;padding:8px;background:var(--canvas);border:1px solid var(--gold);border-radius:6px;color:var(--cream);font-size:14px;text-align:center;letter-spacing:.3em;margin-bottom:.5rem">
+          <button onclick="verifyTelegram()" style="width:100%;padding:8px;font-size:12px;font-weight:600;background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#0c1420;border:none;border-radius:6px;cursor:pointer">Verify & Connect</button>
+        </div>
+        <div id="tgConnected" style="display:none">
+          <div style="font-size:11px;color:var(--teal);margin-bottom:.4rem">✅ Connected — your Telegram history is available</div>
+          <button onclick="disconnectPlatform('telegram')" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--gray-text);border-radius:6px;padding:4px 10px;cursor:pointer">Disconnect</button>
+        </div>
+      </div>
+      <!-- More platforms can be added here -->
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=3"></script>
+<script>
+// Service Worker registration with auto-update
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+  navigator.serviceWorker.register('/static/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+          // New version activated — reload to get it
+          window.location.reload();
+        }
+      });
+    });
+  }).catch(err => console.log('[SW] registration skipped:', err.message));
+}
+</script>
 </body>
 </html>
